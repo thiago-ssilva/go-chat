@@ -4,11 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	staticHandler "github.com/thiago-ssilva/zap/internal/api/handler/static"
 	"github.com/thiago-ssilva/zap/router"
 )
 
 func main() {
-	router := router.SetupRouter()
+
+	staticH := staticHandler.NewStaticHandler()
+	router := router.SetupRouter(staticH)
 
 	srv := &http.Server{
 		Addr:    ":8080",
