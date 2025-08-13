@@ -1,11 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Zap</title>
-  </head>
-  <body> 
-    <div>Hello World!</div>
-  </body>
+<head>
+  <title>Zap</title>
+  <link rel="stylesheet" href="https://unpkg.com/open-props">
+  <link rel="stylesheet" href="https://unpkg.com/open-props/normalize.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/open-props/buttons.min.css">
+  <link rel="stylesheet"  href="static/index.css">
+</head>
+<body>
+    <!-- Login Dialog -->
+    <dialog id="loginDialog" open>
+        <form id="loginForm" name="login" class="form-stack">
+            <div class="form-field">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" required
+                       placeholder="Digite seu nome de usuário">
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+    </dialog>
+
+    <!-- Chat Interface -->
+    <div id="chatContainer" class="chat-container" hidden>
+        <!-- Header -->
+        <header class="chat-header">
+            <h2>Chat Room</h2>
+            <span id="currentUser" class="user-badge"></span>
+        </header>
+
+        <!-- Messages -->
+        <main class="messages-container" id="messagesContainer">
+            <!-- Empty state -->
+            <div id="emptyState" class="empty-state">
+                <div class="empty-state-icon">💬</div>
+                <p class="empty-state-text">Seja o primeiro a enviar uma mensagem!</p>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="input-area">
+            <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+            <button id="sendBtn">Enviar</button>
+        </footer>
+    </div>
+    <script type="module">
+    let loginDialog = document.getElementById("loginDialog")
+    let chatContainer = document.getElementById("chatContainer")
+    let loginForm = document.forms.login
+
+    loginForm.addEventListener("submit", function(event) {
+      event.preventDefault()
+      const formData = new FormData(loginForm)
+      const username = formData.get('username')
+
+      loginDialog.close()
+
+      initChat(username)
+    })
+
+    function initChat(username) {
+      chatContainer.hidden = false
+      document.getElementById('currentUser').textContent = username
+      document.getElementById('messageInput').focus()
+    }
+    </script>
+</body>
 </html>
