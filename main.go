@@ -1,18 +1,23 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/thiago-ssilva/todo-webapp/router"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello world!"))
-	})
+	router := router.SetupRouter()
 
-	http.ListenAndServe(":8000", r)
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+
+	log.Printf("Server starting on port %v\n", srv.Addr)
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("ListenAndServe error: %v", err)
+	}
 }

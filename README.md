@@ -76,12 +76,4 @@ The goal is to practice **HTTP servers**, **goroutines**, **channels**, and **co
 
 ### **Milestone 9 – Deployment**
 - Deploy to **Render** or **Fly.io**.
-- Test with real users.
-- Monitor logs and handle basic scaling.
 
----
-
-## How to Use This Plan
-- Each milestone should be a separate commit (e.g., `feat: milestone 3 – added broadcast hub`).
-- Keep a `LEARNINGS.md` file with bullet points of what was learned in each milestone.
-- Avoid adding unnecessary features too early — focus on mastering the core concepts first.
