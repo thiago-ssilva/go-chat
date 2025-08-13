@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/thiago-ssilva/todo-webapp/router"
+	"github.com/thiago-ssilva/zap/router"
 )
 
 func main() {

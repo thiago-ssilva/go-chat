@@ -1,4 +1,4 @@
-module github.com/thiago-ssilva/todo-webapp
+module github.com/thiago-ssilva/zap
 
 go 1.24.6
 
