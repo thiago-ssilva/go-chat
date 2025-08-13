@@ -1,39 +1,18 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"html"
-	"log"
 	"net/http"
-	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
-var startTime time.Time
-
 func main() {
-	startTime = time.Now()
-
-	http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello world!"))
 	})
 
-	http.Handle("/health", new(healthHandler))
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-type healthHandler struct{}
-
-func (h *healthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-		Status string `json:"status"`
-		Uptime string `json:"uptime"`
-	}{
-		Status: "healthy",
-		Uptime: startTime.String(),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(data)
+	http.ListenAndServe(":8000", r)
 }
