@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  db:
+    container_name: "zapDB"
+    image: postgres:14-alpine
+    volumes:
+      - "./database/postgres-data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: "zap_db"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    restart: unless-stopped
+  server:
+    container_name: "zapServer"
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - secretKey=your-secret-key-here
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=zap_db
+    depends_on:
+      - db
+    restart: unless-stopped
