@@ -1,68 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <title>Zap</title>
-  <link rel="stylesheet" href="https://unpkg.com/open-props">
-  <link rel="stylesheet" href="https://unpkg.com/open-props/normalize.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/open-props/buttons.min.css">
-  <link rel="stylesheet"  href="static/index.css">
-</head>
-<body>
-    <!-- Login Dialog -->
-    <dialog id="loginDialog" open>
-        <form id="loginForm" name="login" class="form-stack">
-            <div class="form-field">
-                <label for="username">Usuário</label>
-                <input type="text" id="username" name="username" required
-                       placeholder="Digite seu nome de usuário">
-            </div>
-            <button type="submit">Entrar</button>
-        </form>
-    </dialog>
+    <head>
+        <title>Zap</title>
+        <link rel="stylesheet" href="https://unpkg.com/open-props">
+        <link rel="stylesheet" href="https://unpkg.com/open-props/normalize.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/open-props/buttons.min.css">
+        <link rel="stylesheet"  href="static/index.css">
+    </head>
+    <body>
+        <!-- Login Dialog -->
+        <dialog id="loginDialog" open>
+            <form id="loginForm" name="login" class="form-stack">
+                <div class="form-field">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" required
+                        placeholder="Digite seu nome de usuário">
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+        </dialog>
 
-    <!-- Chat Interface -->
-    <div id="chatContainer" class="chat-container" hidden>
-        <!-- Header -->
-        <header class="chat-header">
-            <h2>Chat Room</h2>
-            <span id="currentUser" class="user-badge"></span>
-        </header>
+        <!-- Chat Interface -->
+        <div id="chatContainer" class="chat-container" hidden>
+            <!-- Header -->
+            <header class="chat-header">
+                <h2>Chat Room</h2>
+                <span id="currentUser" class="user-badge"></span>
+            </header>
 
-        <!-- Messages -->
-        <main class="messages-container" id="messagesContainer">
-            <!-- Empty state -->
-            <div id="emptyState" class="empty-state">
-                <div class="empty-state-icon">💬</div>
-                <p class="empty-state-text">Seja o primeiro a enviar uma mensagem!</p>
-            </div>
-        </main>
+            <!-- Messages -->
+            <main class="messages-container" id="messagesContainer">
+                <!-- Empty state -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <p class="empty-state-text">Seja o primeiro a enviar uma mensagem!</p>
+                </div>
+            </main>
 
-        <!-- Input Area -->
-        <footer class="input-area">
-            <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
-            <button id="sendBtn">Enviar</button>
-        </footer>
-    </div>
-    <script type="module">
-    let loginDialog = document.getElementById("loginDialog")
-    let chatContainer = document.getElementById("chatContainer")
-    let loginForm = document.forms.login
+            <!-- Input Area -->
+            <footer class="input-area">
+                <form name="message" style="display: contents">
+                    <input type="text" id="messageInput" name="message" required placeholder="Digite sua mensagem...">
+                    <button id="sendBtn">Enviar</button>
+                </form>
+            </footer>
+        </div>
+        <script type="module">
+        let conn = null
+        let username = null
 
-    loginForm.addEventListener("submit", function(event) {
-      event.preventDefault()
-      const formData = new FormData(loginForm)
-      const username = formData.get('username')
+        const DOMElements = {
+            _messagesContainer: null,
+            getLoginDialog() { return document.getElementById("loginDialog") },
+            getLoginForm() { return document.forms.login },
+            getChatContainer() { return document.getElementById("chatContainer") },
+            getUserBadge() { return  document.getElementById('currentUser') },
+            getMessagesContainer() { return document.getElementById('messagesContainer') },
+            getMessagesForm() { return document.forms.message },
+            getEmptyState() { return document.getElementById('emptyState') },
+            getMessagesInput() { return document.getElementById('messageInput') },
+            createMessage(message) {
+                const isOwn = username === message.username
+                const msgContainer = this._messageContainer || this.getMessagesContainer()
+                const messageDiv = document.createElement('div')
+                messageDiv.className = `message ${isOwn ? 'own' : 'other'}`
+                let content = ''
+                if (!isOwn) {
+                    content += `<div class="message-username">${message.username}</div>`
+                }
+                content += `<div>${message.content}</div>`
 
-      loginDialog.close()
+                messageDiv.innerHTML = content
+                messagesContainer.appendChild(messageDiv)
 
-      initChat(username)
-    })
+                messagesContainer.scrollTop = messagesContainer.scrollHeight
+            }
+        }
 
-    function initChat(username) {
-      chatContainer.hidden = false
-      document.getElementById('currentUser').textContent = username
-      document.getElementById('messageInput').focus()
-    }
-    </script>
-</body>
+
+        DOMElements.getLoginForm().addEventListener("submit", function(evt) {
+            evt.preventDefault()
+            const formData = new FormData(evt.target)
+            username = formData.get('username')
+
+            DOMElements.getLoginDialog().close()
+            initChat()
+        })
+
+        DOMElements.getMessagesForm().addEventListener("submit", function(evt) {
+            evt.preventDefault()
+            const formData = new FormData(event.target)
+            const msg = formData.get('message')
+
+            if (!conn || !msg) return;
+
+            conn.send(msg)
+            evt.target.reset()
+        })
+
+        function initChat() {
+            if (!window['WebSocket']) {
+                alert("O navegador não suporta websocket!")
+                return
+            }
+
+            console.log('')
+            const chatContainer = DOMElements.getChatContainer()
+            const userBadge = DOMElements.getUserBadge()
+            const emptyState = DOMElements.getEmptyState()
+
+            chatContainer.hidden = false
+            userBadge.textContent = username
+
+            DOMElements.getMessagesInput().focus()
+
+            conn = new WebSocket(`ws://${document.location.host}/ws?username=${username}`)
+
+            conn.onclose = function (evt) {
+                chatContainer.hidden = true
+                emptyState.hidden = false
+                userBadge.textContent = ''
+                    let emptyState = DOMElements.getEmptyState()
+                    if (emptyState) emptyState.hidden = true
+                getLoginDialog().open()
+            }
+
+            conn.onmessage = function(evt) {
+                try {
+                    emptyState.hidden = true
+                    const data = JSON.parse(evt.data)
+                    data.messages.forEach(msg => DOMElements.createMessage(msg))
+                } catch (err) {
+                    console.error('Unable to parse messages', err)
+                }
+            }
+        }
+        </script>
+    </body>
 </html>
