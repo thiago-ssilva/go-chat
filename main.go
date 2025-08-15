@@ -6,11 +6,33 @@ import (
 
 	staticHandler "github.com/thiago-ssilva/zap/internal/api/handler/static"
 	websocketHandler "github.com/thiago-ssilva/zap/internal/api/handler/websocket"
+	"github.com/thiago-ssilva/zap/internal/db"
+	"github.com/thiago-ssilva/zap/internal/db/migrations"
 	"github.com/thiago-ssilva/zap/internal/ws"
 	"github.com/thiago-ssilva/zap/router"
 )
 
 func main() {
+	//Database
+	dbConn, err := db.NewDatabase()
+
+	if err != nil {
+		log.Fatalf("Could not initialize DB connection: %s", err)
+	}
+
+	defer dbConn.Close()
+
+	if err := dbConn.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
+
+	log.Println("Connected to database successfully")
+
+	//Run migrations
+	if err := migrations.RunMigrations(dbConn); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
 	// Set up Ws
 	wsHub := ws.NewHub()
 
