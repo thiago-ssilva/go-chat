@@ -21,6 +21,11 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 )
 
+type Message struct {
+	Content  string `json:"content"`
+	Username string `json:"username"`
+}
+
 type Client struct {
 	Hub      *Hub
 	Conn     *websocket.Conn
