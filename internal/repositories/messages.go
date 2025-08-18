@@ -9,9 +9,9 @@ import (
 
 type Message struct {
 	id        int
-	username  string
-	content   string
-	createdAt time.Time
+	Username  string
+	Content   string
+	CreatedAt time.Time
 }
 
 type MessagesRepository struct {
@@ -24,21 +24,16 @@ func NewMessagesRepository(db *sql.DB) *MessagesRepository {
 	}
 }
 
-func (r *MessagesRepository) CreateMessage(ctx context.Context, content, username string) (*Message, error) {
+func (r *MessagesRepository) CreateMessage(ctx context.Context, message *Message) (*Message, error) {
 	query := `
 		INSERT INTO messages (username, content)
 		VALUES ($1, $2)
 		RETURNING id, created_at
 	`
 
-	message := &Message{
-		username: username,
-		content:  content,
-	}
-
-	err := r.db.QueryRowContext(ctx, query, message.username, message.content).Scan(
+	err := r.db.QueryRowContext(ctx, query, message.Username, message.Content).Scan(
 		&message.id,
-		&message.createdAt,
+		&message.CreatedAt,
 	)
 
 	if err != nil {
@@ -65,9 +60,9 @@ func (r *MessagesRepository) GetAllMessages(ctx context.Context) ([]*Message, er
 
 		err := rows.Scan(
 			&message.id,
-			&message.username,
-			&message.content,
-			&message.createdAt,
+			&message.Username,
+			&message.Content,
+			&message.CreatedAt,
 		)
 
 		if err != nil {
