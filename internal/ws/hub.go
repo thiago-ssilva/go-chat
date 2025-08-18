@@ -31,12 +31,31 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.clients[client] = true
+			//goroutine to get current saved messages
+			go func() {
+				messages, err := h.messagesRepo.GetAllMessages(context.Background())
+
+				if err != nil {
+					log.Printf("Failed to load messages: %v", err)
+				}
+
+				for _, msg := range messages {
+					wsMsg := &Message{
+						Content:  msg.Content,
+						Username: msg.Username,
+					}
+
+					client.Send <- wsMsg
+				}
+			}()
+
 		case client := <-h.Unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.Send)
 			}
 		case message := <-h.Broadcast:
+			// goroutine to persist message
 			go func(msg *Message) {
 				messageDb := &repositories.Message{
 					Content:  message.Content,

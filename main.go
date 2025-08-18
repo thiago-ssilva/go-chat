@@ -8,6 +8,7 @@ import (
 	websocketHandler "github.com/thiago-ssilva/zap/internal/api/handler/websocket"
 	"github.com/thiago-ssilva/zap/internal/db"
 	"github.com/thiago-ssilva/zap/internal/db/migrations"
+	"github.com/thiago-ssilva/zap/internal/repositories"
 	"github.com/thiago-ssilva/zap/internal/ws"
 	"github.com/thiago-ssilva/zap/router"
 )
@@ -30,11 +31,14 @@ func main() {
 
 	//Run migrations
 	if err := migrations.RunMigrations(dbConn); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+		log.Fatal(err)
 	}
 
+	// Set up repositories
+	messagesRepo := repositories.NewMessagesRepository(dbConn)
+
 	// Set up Ws
-	wsHub := ws.NewHub()
+	wsHub := ws.NewHub(messagesRepo)
 
 	go wsHub.Run()
 
