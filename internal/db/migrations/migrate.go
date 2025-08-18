@@ -35,7 +35,7 @@ func MigrateDown(db *sql.DB) error {
 		return fmt.Errorf("failed to set dialect: %w", err)
 	}
 
-	if err := goose.Down(db, "migrations"); err != nil {
+	if err := goose.Down(db, "."); err != nil {
 		return fmt.Errorf("failed to rollback migrations: %w", err)
 	}
 
@@ -51,7 +51,7 @@ func MigrateReset(db *sql.DB) error {
 		return fmt.Errorf("failed to set dialect: %w", err)
 	}
 
-	if err := goose.Reset(db, "migrations"); err != nil {
+	if err := goose.Reset(db, "."); err != nil {
 		return fmt.Errorf("failed to reset migrations: %w", err)
 	}
 
@@ -65,7 +65,7 @@ func MigrateStatus(db *sql.DB) error {
 		return fmt.Errorf("failed to set dialect: %w", err)
 	}
 
-	if err := goose.Status(db, "migrations"); err != nil {
+	if err := goose.Status(db, "."); err != nil {
 		return fmt.Errorf("failed to get migrations: %w", err)
 	}
 
