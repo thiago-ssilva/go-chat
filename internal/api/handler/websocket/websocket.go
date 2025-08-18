@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -24,14 +25,21 @@ func NewWebsocketHandler(hub *ws.Hub) *WebsocketHandler {
 }
 
 func (h *WebsocketHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	username := q.Get("username")
+
+	if h.hub.IsUsernameAvailable(username) == false {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Username already taken"})
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	q := r.URL.Query()
-	username := q.Get("username")
 
 	client := &ws.Client{
 		Hub:      h.hub,

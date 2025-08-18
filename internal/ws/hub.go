@@ -78,3 +78,13 @@ func (h *Hub) Run() {
 		}
 	}
 }
+
+func (h *Hub) IsUsernameAvailable(username string) bool {
+	for client := range h.clients {
+		if username == client.Username {
+			return false
+		}
+	}
+
+	return true
+}
