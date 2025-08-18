@@ -11,12 +11,16 @@
         <!-- Login Dialog -->
         <dialog id="loginDialog" open>
             <form id="loginForm" name="login" class="form-stack">
+                <div id="loginError" class="error-message" hidden></div>
                 <div class="form-field">
                     <label for="username">Usuário</label>
                     <input type="text" id="username" name="username" required
                         placeholder="Digite seu nome de usuário">
                 </div>
-                <button type="submit">Entrar</button>
+                <button type="submit" id="loginSubmit">
+                    <span class="button-text">Entrar</span>
+                    <span class="button-loading" hidden>Conectando...</span>
+                </button>
             </form>
         </dialog>
 
@@ -53,6 +57,9 @@
             _messagesContainer: null,
             getLoginDialog() { return document.getElementById("loginDialog") },
             getLoginForm() { return document.forms.login },
+            getLoginError() { return document.getElementById("loginError") },
+            getLoginSubmit() { return document.getElementById("loginSubmit") },
+            getUsernameInput() { return document.getElementById("username") },
             getChatContainer() { return document.getElementById("chatContainer") },
             getUserBadge() { return  document.getElementById('currentUser') },
             getMessagesContainer() { return document.getElementById('messagesContainer') },
@@ -77,13 +84,59 @@
             }
         }
 
+        // Error handling functions
+        function showError(message) {
+            const errorEl = DOMElements.getLoginError()
+            const formField = document.querySelector('.form-field')
+
+            errorEl.textContent = message
+            errorEl.hidden = false
+            formField.classList.add('error')
+        }
+
+        function clearError() {
+            const errorEl = DOMElements.getLoginError()
+            const formField = document.querySelector('.form-field')
+
+            errorEl.hidden = true
+            formField.classList.remove('error')
+        }
+
+        function setLoading(loading) {
+            const submitBtn = DOMElements.getLoginSubmit()
+            const buttonText = submitBtn.querySelector('.button-text')
+            const buttonLoading = submitBtn.querySelector('.button-loading')
+
+            submitBtn.disabled = loading
+            buttonText.hidden = loading
+            buttonLoading.hidden = !loading
+        }
+
+        DOMElements.getUsernameInput().addEventListener('input', clearError)
 
         DOMElements.getLoginForm().addEventListener("submit", function(evt) {
             evt.preventDefault()
-            const formData = new FormData(evt.target)
-            username = formData.get('username')
+            clearError()
 
-            DOMElements.getLoginDialog().close()
+            const formData = new FormData(evt.target)
+            username = formData.get('username').trim()
+
+            // Basic validation
+            if (!username) {
+                showError('Nome de usuário é obrigatório')
+                return
+            }
+
+            if (username.length < 2) {
+                showError('Nome de usuário deve ter pelo menos 2 caracteres')
+                return
+            }
+
+            if (username.length > 20) {
+                showError('Nome de usuário deve ter no máximo 20 caracteres')
+                return
+            }
+
             initChat()
         })
 
@@ -100,33 +153,46 @@
 
         function initChat() {
             if (!window['WebSocket']) {
-                alert("O navegador não suporta websocket!")
+                showError("O navegador não suporta WebSocket!")
                 return
             }
 
-            console.log('')
-            const chatContainer = DOMElements.getChatContainer()
-            const userBadge = DOMElements.getUserBadge()
-            const emptyState = DOMElements.getEmptyState()
-
-            chatContainer.hidden = false
-            userBadge.textContent = username
-
-            DOMElements.getMessagesInput().focus()
+            setLoading(true)
 
             conn = new WebSocket(`ws://${document.location.host}/ws?username=${username}`)
 
-            conn.onclose = function (evt) {
-                chatContainer.hidden = true
-                emptyState.hidden = false
-                userBadge.textContent = ''
-                    let emptyState = DOMElements.getEmptyState()
-                    if (emptyState) emptyState.hidden = true
-                getLoginDialog().open()
+            conn.onopen = function() {
+                setLoading(false)
+                DOMElements.getLoginDialog().close()
+
+                const chatContainer = DOMElements.getChatContainer()
+                const userBadge = DOMElements.getUserBadge()
+
+                chatContainer.hidden = false
+                userBadge.textContent = username
+                DOMElements.getMessagesInput().focus()
+            }
+
+            conn.onerror = function(evt) {
+                setLoading(false)
+                showError("Erro ao conectar. Tente novamente.")
+                DOMElements.getUsernameInput().focus()
+                console.error('WebSocket error:', evt)
+            }
+
+            conn.onclose = function(evt) {
+                setLoading(false)
+
+                if (!DOMElements.getChatContainer().hidden) {
+                    DOMElements.getChatContainer().hidden = true
+                    DOMElements.getUserBadge().textContent = ''
+                    DOMElements.getLoginDialog().open = true
+                }
             }
 
             conn.onmessage = function(evt) {
                 try {
+                    const emptyState = DOMElements.getEmptyState()
                     emptyState.hidden = true
                     const data = JSON.parse(evt.data)
                     data.messages.forEach(msg => DOMElements.createMessage(msg))
