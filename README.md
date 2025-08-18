@@ -68,9 +68,8 @@ The goal is to practice **HTTP servers**, **goroutines**, **channels**, and **co
 
 ### **Milestone 8 – Async Features**
 - Add background goroutines for:
-  - Periodic DB writes in batches.
+  - Periodic DB cleanup.
   - Cleaning up inactive clients.
-  - Scheduled announcements.
 
 ---
 
