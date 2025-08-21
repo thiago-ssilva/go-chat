@@ -50,164 +50,182 @@
             </footer>
         </div>
         <script type="module">
-        let conn = null
-        let username = null
+        class DOMManager {
+            getLoginDialog() { return document.getElementById("loginDialog") }
+            getLoginForm() { return document.forms.login }
+            getLoginError() { return document.getElementById("loginError") }
+            getLoginSubmit() { return document.getElementById("loginSubmit") }
+            getUsernameInput() { return document.getElementById("username") }
+            getChatContainer() { return document.getElementById("chatContainer") }
+            getUserBadge() { return document.getElementById('currentUser') }
+            getMessagesContainer() { return document.getElementById('messagesContainer') }
+            getMessagesForm() { return document.forms.message }
+            getEmptyState() { return document.getElementById('emptyState') }
+            getMessagesInput() { return document.getElementById('messageInput') }
 
-        const DOMElements = {
-            _messagesContainer: null,
-            getLoginDialog() { return document.getElementById("loginDialog") },
-            getLoginForm() { return document.forms.login },
-            getLoginError() { return document.getElementById("loginError") },
-            getLoginSubmit() { return document.getElementById("loginSubmit") },
-            getUsernameInput() { return document.getElementById("username") },
-            getChatContainer() { return document.getElementById("chatContainer") },
-            getUserBadge() { return  document.getElementById('currentUser') },
-            getMessagesContainer() { return document.getElementById('messagesContainer') },
-            getMessagesForm() { return document.forms.message },
-            getEmptyState() { return document.getElementById('emptyState') },
-            getMessagesInput() { return document.getElementById('messageInput') },
-            createMessage(message) {
-                const isOwn = username === message.username
-                const msgContainer = this._messageContainer || this.getMessagesContainer()
+            showError(message) {
+                const errorEl = this.getLoginError()
+                const formField = document.querySelector('.form-field')
+
+                errorEl.textContent = message
+                errorEl.hidden = false
+                formField.classList.add('error')
+            }
+
+            clearError() {
+                const errorEl = this.getLoginError()
+                const formField = document.querySelector('.form-field')
+
+                errorEl.hidden = true
+                formField.classList.remove('error')
+            }
+
+            setLoading(loading) {
+                const submitBtn = this.getLoginSubmit()
+                const buttonText = submitBtn.querySelector('.button-text')
+                const buttonLoading = submitBtn.querySelector('.button-loading')
+
+                submitBtn.disabled = loading
+                buttonText.hidden = loading
+                buttonLoading.hidden = !loading
+            }
+
+            createMessage(message, username, isOwn) {
+                const msgContainer = this.getMessagesContainer()
                 const messageDiv = document.createElement('div')
                 messageDiv.className = `message ${isOwn ? 'own' : 'other'}`
+
                 let content = ''
+
                 if (!isOwn) {
                     content += `<div class="message-username">${message.username}</div>`
                 }
                 content += `<div>${message.content}</div>`
 
                 messageDiv.innerHTML = content
-                messagesContainer.appendChild(messageDiv)
+                msgContainer.appendChild(messageDiv)  // ✅ Fixed: msgContainer
 
-                messagesContainer.scrollTop = messagesContainer.scrollHeight
+                msgContainer.scrollTop = msgContainer.scrollHeight  // ✅ Fixed: msgContainer
             }
         }
 
-        // Error handling functions
-        function showError(message) {
-            const errorEl = DOMElements.getLoginError()
-            const formField = document.querySelector('.form-field')
+        class ChatApp {
+            constructor() {
+                this.conn = null;
+                this.username = null;
+                this.dom = new DOMManager()
+            }
 
-            errorEl.textContent = message
-            errorEl.hidden = false
-            formField.classList.add('error')
-        }
+            run() {
+                this.dom.getLoginForm().addEventListener("submit", (evt) => this.handleLogin(evt))
+                this.dom.getMessagesForm().addEventListener("submit", (evt) => this.handleMessage(evt))
+                this.dom.getUsernameInput().addEventListener('input', () => this.dom.clearError())
+            }
 
-        function clearError() {
-            const errorEl = DOMElements.getLoginError()
-            const formField = document.querySelector('.form-field')
+            async handleLogin(evt) {
+                try {
+                    evt.preventDefault()
+                    this.dom.clearError()
 
-            errorEl.hidden = true
-            formField.classList.remove('error')
-        }
+                    const formData = new FormData(evt.target)
+                    const newUsername = formData.get('username').trim()
 
-        function setLoading(loading) {
-            const submitBtn = DOMElements.getLoginSubmit()
-            const buttonText = submitBtn.querySelector('.button-text')
-            const buttonLoading = submitBtn.querySelector('.button-loading')
+                    if (!newUsername) {
+                        return this.dom.showError('Nome de usuário é obrigatório')
+                    }
 
-            submitBtn.disabled = loading
-            buttonText.hidden = loading
-            buttonLoading.hidden = !loading
-        }
+                    const response = await fetch(`http://${document.location.host}/api/users/validate/username?username=${newUsername}`);
+                    const data = await response.json();
 
-        DOMElements.getUsernameInput().addEventListener('input', clearError)
+                    if (response.ok && data.valid) {
+                        return this.initWebSocket(newUsername);
+                    }
+                    if (data.code === 'USERNAME_TAKEN') {
+                        return this.dom.showError('Nome do usuário já utilizado.')
+                    }
+                    if (data.code === 'USERNAME_LENGTH') {
+                        return this.dom.showError('Nome deve ter entre 3 e 20 caracteres.')
+                    }
 
-        DOMElements.getLoginForm().addEventListener("submit", async function(evt) {
-            try {
+                    return this.dom.showError('Erro de validação. Tente novamente.')
+
+                } catch (err) {
+                    console.log(err)
+                    return this.dom.showError('Erro de validação. Tente novamente.')
+                }
+            }
+
+            handleMessage(evt) {
                 evt.preventDefault()
-                clearError()
-
                 const formData = new FormData(evt.target)
-                username = formData.get('username').trim()
+                const msg = formData.get('message')
 
-                if (!username) {
-                    showError('Nome de usuário é obrigatório')
+                if (!this.conn || !msg) return
+
+                this.conn.send(msg)
+                evt.target.reset()
+            }
+
+            initWebSocket(username) {
+                if (!window['WebSocket']) {
+                    this.dom.showError('O navegador não suporta WebSocket!')
                     return
                 }
-                const response = await fetch(`http://${document.location.host}/api/users/validate/username?username=${username}`);
-                const data = await response.json();
 
-                if (response.ok && data.valid) {
-                    return initChat();
-                }
+                this.dom.setLoading(true)
 
-                if (data.code === 'USERNAME_TAKEN') {
-                    return showError('Nome do usuário já utilizado.');
-                }
-                if (data.code === 'USERNAME_LENGTH') {
-                    return showError('Nome deve ter entre 3 e 20 caracteres.')
-                }
-                return showError('Erro de validação. Tente novamente.');
+                this.conn = new WebSocket(`ws://${document.location.host}/ws?username=${username}`)
+                this.username = username
 
-            } catch (err) {
-                console.log(err);
-                return showError('Erro de validação. Tente novamente.');
-            }
-        })
-
-        DOMElements.getMessagesForm().addEventListener("submit", function(evt) {
-            evt.preventDefault()
-            const formData = new FormData(event.target)
-            const msg = formData.get('message')
-
-            if (!conn || !msg) return;
-
-            conn.send(msg)
-            evt.target.reset()
-        })
-
-        function initChat() {
-            if (!window['WebSocket']) {
-                showError("O navegador não suporta WebSocket!")
-                return
+                this.conn.onopen = () => this.handleWebSocketOpen()
+                this.conn.onerror = (evt) => this.handleWebSocketError(evt)
+                this.conn.onclose = (evt) => this.handleWebSocketClose(evt)
+                this.conn.onmessage = (evt) => this.handleWebSocketMessage(evt)
             }
 
-            setLoading(true)
+            handleWebSocketOpen() {
+                this.dom.setLoading(false)
+                this.dom.getLoginDialog().close()
 
-            conn = new WebSocket(`ws://${document.location.host}/ws?username=${username}`)
-
-            conn.onopen = function() {
-                setLoading(false)
-                DOMElements.getLoginDialog().close()
-
-                const chatContainer = DOMElements.getChatContainer()
-                const userBadge = DOMElements.getUserBadge()
+                const chatContainer = this.dom.getChatContainer()
+                const userBadge = this.dom.getUserBadge()
 
                 chatContainer.hidden = false
-                userBadge.textContent = username
-                DOMElements.getMessagesInput().focus()
+                userBadge.textContent = this.username
+                this.dom.getMessagesInput().focus()
             }
 
-            conn.onerror = function(evt) {
-                setLoading(false)
-                showError("Erro ao conectar. Tente novamente.")
-                DOMElements.getUsernameInput().focus()
+            handleWebSocketError(evt) {
+                this.dom.setLoading(false)
+                this.dom.showError("Erro ao conectar. Tente novamente.")
+                this.dom.getUsernameInput().focus()
                 console.error('WebSocket error:', evt)
             }
 
-            conn.onclose = function(evt) {
-                setLoading(false)
+            handleWebSocketClose(evt) {
+                this.dom.setLoading(false)
+                const chatContainer = this.dom.getChatContainer()
 
-                if (!DOMElements.getChatContainer().hidden) {
-                    DOMElements.getChatContainer().hidden = true
-                    DOMElements.getUserBadge().textContent = ''
-                    DOMElements.getLoginDialog().open = true
+                if (!chatContainer.hidden) {
+                    chatContainer.hidden = true
+                    this.dom.getUserBadge().textContent = ''
+                    this.dom.getLoginDialog().open = true
                 }
             }
 
-            conn.onmessage = function(evt) {
+            handleWebSocketMessage(evt) {
                 try {
-                    const emptyState = DOMElements.getEmptyState()
+                    const emptyState = this.dom.getEmptyState()
                     emptyState.hidden = true
                     const data = JSON.parse(evt.data)
-                    data.messages.forEach(msg => DOMElements.createMessage(msg))
+                    data.messages.forEach(msg => this.dom.createMessage(msg, this.username, this.username === msg.username))
                 } catch (err) {
                     console.error('Unable to parse messages', err)
                 }
             }
         }
+
+        (new ChatApp()).run()
         </script>
     </body>
 </html>
