@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	staticHandler "github.com/thiago-ssilva/zap/internal/api/handler/static"
-	websocketHandler "github.com/thiago-ssilva/zap/internal/api/handler/websocket"
 	"github.com/thiago-ssilva/zap/internal/db"
 	"github.com/thiago-ssilva/zap/internal/db/migrations"
-	"github.com/thiago-ssilva/zap/internal/repositories"
+	"github.com/thiago-ssilva/zap/internal/handler"
+	"github.com/thiago-ssilva/zap/internal/repository"
+	"github.com/thiago-ssilva/zap/internal/service"
 	"github.com/thiago-ssilva/zap/internal/ws"
 	"github.com/thiago-ssilva/zap/router"
 )
@@ -35,19 +35,23 @@ func main() {
 	}
 
 	// Set up repositories
-	messagesRepo := repositories.NewMessagesRepository(dbConn)
+	messagesRepo := repository.NewMessagesRepository(dbConn)
 
 	// Set up Ws
 	wsHub := ws.NewHub(messagesRepo)
 
-	go wsHub.Run()
+	// Set up Services
+	userService := service.NewUserService(wsHub)
 
 	// Set up Handlers
-	staticH := staticHandler.NewStaticHandler()
-	websocketH := websocketHandler.NewWebsocketHandler(wsHub)
+	staticH := handler.NewStaticHandler()
+	websocketH := handler.NewWebsocketHandler(wsHub, userService)
+	usersH := handler.NewUserHandler(userService)
+
+	go wsHub.Run()
 
 	// Set up Server
-	router := router.SetupRouter(staticH, websocketH)
+	router := router.SetupRouter(staticH, websocketH, usersH)
 
 	srv := &http.Server{
 		Addr:    ":8080",

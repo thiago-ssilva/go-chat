@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/thiago-ssilva/zap/internal/repositories"
+	"github.com/thiago-ssilva/zap/internal/repository"
 )
 
 type Hub struct {
@@ -12,10 +12,10 @@ type Hub struct {
 	Register     chan *Client
 	Unregister   chan *Client
 	Broadcast    chan *Message
-	messagesRepo *repositories.MessagesRepository
+	messagesRepo *repository.MessagesRepository
 }
 
-func NewHub(messagesRepo *repositories.MessagesRepository) *Hub {
+func NewHub(messagesRepo *repository.MessagesRepository) *Hub {
 	return &Hub{
 		Broadcast:    make(chan *Message, 5),
 		Register:     make(chan *Client),
@@ -57,7 +57,7 @@ func (h *Hub) Run() {
 		case message := <-h.Broadcast:
 			// goroutine to persist message
 			go func(msg *Message) {
-				messageDb := &repositories.Message{
+				messageDb := &repository.Message{
 					Content:  message.Content,
 					Username: message.Username,
 				}
@@ -79,12 +79,12 @@ func (h *Hub) Run() {
 	}
 }
 
-func (h *Hub) IsUsernameAvailable(username string) bool {
+func (h *Hub) IsUsernameTaken(username string) bool {
 	for client := range h.clients {
 		if username == client.Username {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }

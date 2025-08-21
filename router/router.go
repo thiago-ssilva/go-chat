@@ -5,11 +5,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	staticHandler "github.com/thiago-ssilva/zap/internal/api/handler/static"
-	websocketHandler "github.com/thiago-ssilva/zap/internal/api/handler/websocket"
+	"github.com/thiago-ssilva/zap/internal/handler"
 )
 
-func SetupRouter(staticH *staticHandler.StaticHandler, websocketH *websocketHandler.WebsocketHandler) http.Handler {
+func SetupRouter(staticH *handler.StaticHandler, websocketH *handler.WebsocketHandler, userH *handler.UserHandler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -17,6 +16,7 @@ func SetupRouter(staticH *staticHandler.StaticHandler, websocketH *websocketHand
 	r.Get("/static/*", staticH.StaticFiles)
 	r.Get("/", staticH.Index)
 	r.Get("/ws", websocketH.JoinRoom)
+	r.Get("/api/users/validate/username", userH.ValidateUsername)
 
 	return r
 }

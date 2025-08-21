@@ -1,4 +1,4 @@
-package static
+package handler
 
 import "net/http"
 

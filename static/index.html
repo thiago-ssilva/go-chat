@@ -114,30 +114,37 @@
 
         DOMElements.getUsernameInput().addEventListener('input', clearError)
 
-        DOMElements.getLoginForm().addEventListener("submit", function(evt) {
-            evt.preventDefault()
-            clearError()
+        DOMElements.getLoginForm().addEventListener("submit", async function(evt) {
+            try {
+                evt.preventDefault()
+                clearError()
 
-            const formData = new FormData(evt.target)
-            username = formData.get('username').trim()
+                const formData = new FormData(evt.target)
+                username = formData.get('username').trim()
 
-            // Basic validation
-            if (!username) {
-                showError('Nome de usuário é obrigatório')
-                return
+                if (!username) {
+                    showError('Nome de usuário é obrigatório')
+                    return
+                }
+                const response = await fetch(`http://${document.location.host}/api/users/validate/username?username=${username}`);
+                const data = await response.json();
+
+                if (response.ok && data.valid) {
+                    return initChat();
+                }
+
+                if (data.code === 'USERNAME_TAKEN') {
+                    return showError('Nome do usuário já utilizado.');
+                }
+                if (data.code === 'USERNAME_LENGTH') {
+                    return showError('Nome deve ter entre 3 e 20 caracteres.')
+                }
+                return showError('Erro de validação. Tente novamente.');
+
+            } catch (err) {
+                console.log(err);
+                return showError('Erro de validação. Tente novamente.');
             }
-
-            if (username.length < 2) {
-                showError('Nome de usuário deve ter pelo menos 2 caracteres')
-                return
-            }
-
-            if (username.length > 20) {
-                showError('Nome de usuário deve ter no máximo 20 caracteres')
-                return
-            }
-
-            initChat()
         })
 
         DOMElements.getMessagesForm().addEventListener("submit", function(evt) {

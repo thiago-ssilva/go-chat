@@ -1,4 +1,4 @@
-package websocket
+package handler
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/thiago-ssilva/zap/internal/service"
 	"github.com/thiago-ssilva/zap/internal/ws"
 )
 
@@ -15,12 +16,14 @@ var upgrader = websocket.Upgrader{
 }
 
 type WebsocketHandler struct {
-	hub *ws.Hub
+	hub         *ws.Hub
+	userService *service.UserService
 }
 
-func NewWebsocketHandler(hub *ws.Hub) *WebsocketHandler {
+func NewWebsocketHandler(hub *ws.Hub, userService *service.UserService) *WebsocketHandler {
 	return &WebsocketHandler{
-		hub: hub,
+		hub:         hub,
+		userService: userService,
 	}
 }
 
@@ -28,10 +31,10 @@ func (h *WebsocketHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	username := q.Get("username")
 
-	if h.hub.IsUsernameAvailable(username) == false {
+	if err := h.userService.ValidateUsername(username); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Username already taken"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
