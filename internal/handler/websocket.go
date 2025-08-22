@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/thiago-ssilva/zap/internal/service"
-	"github.com/thiago-ssilva/zap/internal/ws"
+	"github.com/thiago-ssilva/go-chat/internal/service"
+	"github.com/thiago-ssilva/go-chat/internal/ws"
 )
 
 var upgrader = websocket.Upgrader{

@@ -4,13 +4,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/thiago-ssilva/zap/internal/db"
-	"github.com/thiago-ssilva/zap/internal/db/migrations"
-	"github.com/thiago-ssilva/zap/internal/handler"
-	"github.com/thiago-ssilva/zap/internal/repository"
-	"github.com/thiago-ssilva/zap/internal/service"
-	"github.com/thiago-ssilva/zap/internal/ws"
-	"github.com/thiago-ssilva/zap/router"
+	"github.com/thiago-ssilva/go-chat/internal/db"
+	"github.com/thiago-ssilva/go-chat/internal/db/migrations"
+	"github.com/thiago-ssilva/go-chat/internal/handler"
+	"github.com/thiago-ssilva/go-chat/internal/repository"
+	"github.com/thiago-ssilva/go-chat/internal/service"
+	"github.com/thiago-ssilva/go-chat/internal/ws"
+	"github.com/thiago-ssilva/go-chat/router"
 )
 
 func main() {

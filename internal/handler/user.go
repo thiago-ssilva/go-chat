@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/thiago-ssilva/zap/internal/service"
+	"github.com/thiago-ssilva/go-chat/internal/service"
 )
 
 type UserHandler struct {

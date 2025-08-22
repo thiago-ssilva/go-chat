@@ -1,19 +1,18 @@
-version: "3.8"
 services:
   db:
-    container_name: "zapDB"
+    container_name: "chatDB"
     image: postgres:14-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: "zap_db"
+      POSTGRES_DB: "chat_db"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
     restart: unless-stopped
   server:
-    container_name: "zapServer"
+    container_name: "chatServer"
     build:
       context: .
       dockerfile: Dockerfile
@@ -26,7 +25,7 @@ services:
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=zap_db
+      - DB_NAME=chat_db
     depends_on:
       - db
 volumes:

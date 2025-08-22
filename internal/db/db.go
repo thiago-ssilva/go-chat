@@ -15,7 +15,7 @@ func NewDatabase() (*sql.DB, error) {
 	dbPort := getEnv("DB_PORT", "5433")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPassword := getEnv("DB_PASSWORD", "postgres")
-	dbName := getEnv("DB_NAME", "zap_db")
+	dbName := getEnv("DB_NAME", "chat_db")
 
 	connectStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
 

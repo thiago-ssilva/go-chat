@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/thiago-ssilva/zap/internal/repository"
+	"github.com/thiago-ssilva/go-chat/internal/repository"
 )
 
 type Hub struct {

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/thiago-ssilva/zap/internal/ws"
+	"github.com/thiago-ssilva/go-chat/internal/ws"
 )
 
 type UserService struct {

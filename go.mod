@@ -1,4 +1,4 @@
-module github.com/thiago-ssilva/zap
+module github.com/thiago-ssilva/go-chat
 
 go 1.24.6
 

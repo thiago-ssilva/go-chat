@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/thiago-ssilva/zap/internal/handler"
+	"github.com/thiago-ssilva/go-chat/internal/handler"
 )
 
 func SetupRouter(staticH *handler.StaticHandler, websocketH *handler.WebsocketHandler, userH *handler.UserHandler) http.Handler {
